@@ -67,12 +67,12 @@ export default function UserContracts() {
 
   const columns: ColumnDef<ContractAnalysis>[] = [
     {
-      accessorKey: "_id",
+      accessorKey: "id",
       header: ({ column }) => {
         return <Button variant={"ghost"}>Contract ID</Button>;
       },
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue<string>("_id")}</div>
+        <div className="font-medium">{row.getValue<string>("id")}</div>
       ),
     },
     {
@@ -121,7 +121,7 @@ export default function UserContracts() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem>
-                <Link href={`/dashboard/contract/${contract._id}`}>
+                <Link href={`/dashboard/contract/${contract.id}`}>
                   View Details
                 </Link>
               </DropdownMenuItem>

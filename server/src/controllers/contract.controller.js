@@ -152,11 +152,22 @@ export async function getContractByID(req, res) {
   }
 
   try {
+    // Fetch from Redis
     const cachedContract = await redis.get(`contract:${id}`);
     if (cachedContract) {
-      return res.json(JSON.parse(cachedContract));
+      try {
+        const parsedContract =
+          typeof cachedContract === "string"
+            ? JSON.parse(cachedContract)
+            : cachedContract;
+        return res.json(parsedContract);
+      } catch (e) {
+        console.error("Invalid JSON in Redis:", cachedContract, e);
+        await redis.del(`contract:${id}`); // Remove corrupted cache
+      }
     }
 
+    // Fetch from Database
     const contract = await prisma.contractAnalysis.findFirst({
       where: {
         id: parseInt(id, 10),
@@ -168,6 +179,7 @@ export async function getContractByID(req, res) {
       return res.status(404).json({ error: "Contract not found" });
     }
 
+    // Save to Redis
     await redis.set(`contract:${id}`, JSON.stringify(contract), { ex: 3600 });
 
     res.json(contract);
