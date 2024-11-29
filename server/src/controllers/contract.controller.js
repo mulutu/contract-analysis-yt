@@ -35,7 +35,7 @@ export async function detectAndConfirmContractType(req, res) {
 
   try {
     const fileKey = `file:${user.id}:${Date.now()}`;
-    await redis.set(fileKey, req.file.buffer, "EX", 3600); // Expire in 1 hour
+    await redis.set(fileKey, req.file.buffer, { ex: 3600 }); // Correct usage
 
     const pdfText = await extractTextFromPDF(fileKey);
     const detectedType = await detectContractType(pdfText);
@@ -64,28 +64,52 @@ export async function analyzeContract(req, res) {
 
   try {
     const fileKey = `file:${user.id}:${Date.now()}`;
-    await redis.set(fileKey, req.file.buffer, "EX", 3600); // Expire in 1 hour
+    await redis.set(fileKey, req.file.buffer, { ex: 3600 });
 
     const pdfText = await extractTextFromPDF(fileKey);
-    let analysis;
 
-    if (user.isPremium) {
-      analysis = await analyzeContractWithAI(pdfText, "premium", contractType);
-    } else {
-      analysis = await analyzeContractWithAI(pdfText, "free", contractType);
-    }
+    const analysis = await analyzeContractWithAI(
+      pdfText,
+      user.isPremium ? "premium" : "free",
+      contractType
+    );
 
-    if (!analysis.summary || !analysis.risks || !analysis.opportunities) {
-      throw new Error("Failed to analyze contract");
-    }
+    const risksData = analysis.risks
+      ? analysis.risks.map((risk) => ({
+        risk: risk.risk,
+        explanation: risk.explanation,
+        severity: risk.severity || "medium", // Default severity if not provided
+      }))
+      : [];
 
-    // Save analysis using Prisma
+    const opportunitiesData = analysis.opportunities
+      ? analysis.opportunities.map((opportunity) => ({
+        opportunity: opportunity.opportunity,
+        explanation: opportunity.explanation,
+        impact: opportunity.impact || "medium", // Default impact if not provided
+      }))
+      : [];
+
+
     const savedAnalysis = await prisma.contractAnalysis.create({
       data: {
         userId: user.id,
         contractText: pdfText,
         contractType,
-        ...analysis,
+        risks: {
+          create: risksData,
+        },
+        opportunities: {
+          create: opportunitiesData,
+        },
+        summary: analysis.summary || "No summary available.",
+        recommendations: analysis.recommendations || [],
+        keyClauses: analysis.keyClauses || [],
+        negotiationPoints: analysis.negotiationPoints || [],
+        performanceMetrics: analysis.performanceMetrics || [],
+        intellectualPropertyClauses: analysis.intellectualPropertyClauses || [],
+        customFields: analysis.customFields || [],
+        overallScore: analysis.overallScore || null,
         language: "en",
         aiModel: "gemini-pro",
       },
@@ -93,10 +117,13 @@ export async function analyzeContract(req, res) {
 
     res.json(savedAnalysis);
   } catch (error) {
-    console.error(error);
+    console.error("Error analyzing contract:", error);
     res.status(500).json({ error: "Failed to analyze contract" });
   }
 }
+
+
+
 
 // Get user contracts
 export async function getUserContracts(req, res) {
@@ -132,7 +159,7 @@ export async function getContractByID(req, res) {
 
     const contract = await prisma.contractAnalysis.findFirst({
       where: {
-        id: parseInt(id, 10), // Adjust based on your ID type
+        id: parseInt(id, 10),
         userId: user.id,
       },
     });
@@ -141,7 +168,7 @@ export async function getContractByID(req, res) {
       return res.status(404).json({ error: "Contract not found" });
     }
 
-    await redis.set(`contract:${id}`, JSON.stringify(contract), "EX", 3600); // Cache for 1 hour
+    await redis.set(`contract:${id}`, JSON.stringify(contract), { ex: 3600 });
 
     res.json(contract);
   } catch (error) {

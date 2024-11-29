@@ -176,10 +176,20 @@ export default function UserContracts() {
         ) ?? 0) / totalContracts
       : 0;
 
-  const highRiskContracts =
+  /*const highRiskContracts =
     contracts?.filter((contract) =>
       contract.risks.some((risk) => risk.severity === "high")
-    ).length ?? 0;
+    ).length ?? 0; */
+	
+  const highRiskContracts =
+  contracts?.filter((contract) => {
+    if (!Array.isArray(contract.risks)) {
+      console.warn(`Contract ID ${contract.id} has no risks array`);
+      return false;
+    }
+    return contract.risks.some((risk) => risk.severity === "high");
+  }).length ?? 0;
+
 
   return (
     <div className="container mx-auto p-6 space-y-8">

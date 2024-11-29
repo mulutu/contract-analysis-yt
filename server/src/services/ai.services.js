@@ -1,21 +1,21 @@
 import redis from "../config/redis.js";
-//import { getDocument } from "pdfjs-dist";
-//import { getDocument } from "pdfjs-dist/legacy/build/pdf.js";
 import pdfjs from "pdfjs-dist/legacy/build/pdf.js";
-const { getDocument } = pdfjs;
-
-/*import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdfjs = require("pdfjs-dist/legacy/build/pdf.js");
-const { getDocument } = pdfjs;
-*/
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const { getDocument, GlobalWorkerOptions } = pdfjs;
+
+// Configure the PDF.js worker
+GlobalWorkerOptions.workerSrc = "./pdf.worker.js";
+const STANDARD_FONT_DATA_URL = "./fonts/";
+
+// Configure the Google Generative AI
 const AI_MODEL = "gemini-pro";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const aiModel = genAI.getGenerativeModel({ model: AI_MODEL });
 
+/**
+ * Extract text from a PDF stored in Redis
+ */
 export async function extractTextFromPDF(fileKey) {
   try {
     const fileData = await redis.get(fileKey);
@@ -37,7 +37,11 @@ export async function extractTextFromPDF(fileKey) {
       throw new Error("Invalid file data");
     }
 
-    const pdf = await getDocument({ data: fileBuffer }).promise;
+    const pdf = await getDocument({
+      data: fileBuffer,
+      standardFontDataUrl: STANDARD_FONT_DATA_URL,
+    }).promise;
+
     let text = "";
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
@@ -51,6 +55,9 @@ export async function extractTextFromPDF(fileKey) {
   }
 }
 
+/**
+ * Detect contract type using Google Generative AI
+ */
 export async function detectContractType(contractText) {
   const prompt = `
     Analyze the following contract text and determine the type of contract it is.
@@ -64,80 +71,74 @@ export async function detectContractType(contractText) {
   try {
     const results = await aiModel.generateContent(prompt);
     const response = results.response;
-    return response.text.trim();
+
+    // Ensure `response.text` is invoked to get the text content
+    const responseText = typeof response.text === "function" ? await response.text() : null;
+
+    if (typeof responseText !== "string") {
+      console.error("Unexpected response format:", results);
+      throw new Error("Expected response.text to be a string");
+    }
+
+    return responseText.trim();
   } catch (error) {
     console.error("Error detecting contract type:", error);
     throw error;
   }
 }
 
+/**
+ * Analyze a contract with AI based on user tier
+ */
 export async function analyzeContractWithAI(contractText, tier, contractType) {
   let prompt;
   if (tier === "premium") {
     prompt = `
     Analyze the following ${contractType} contract and provide:
-    1. A list of at least 10 potential risks for the party receiving the contract, each with a brief explanation and severity level (low, medium, high).
-    2. A list of at least 10 potential opportunities or benefits for the receiving party, each with a brief explanation and impact level (low, medium, high).
-    3. A comprehensive summary of the contract, including key terms and conditions.
-    4. Any recommendations for improving the contract from the receiving party's perspective.
-    5. A list of key clauses in the contract.
-    6. An assessment of the contract's legal compliance.
-    7. A list of potential negotiation points.
-    8. The contract duration or term, if applicable.
-    9. A summary of termination conditions, if applicable.
-    10. A breakdown of any financial terms or compensation structure, if applicable.
-    11. Any performance metrics or KPIs mentioned, if applicable.
-    12. A summary of any specific clauses relevant to this type of contract (e.g., intellectual property for employment contracts, warranties for sales contracts).
-    13. An overall score from 1 to 100, with 100 being the highest. This score represents the overall favorability of the contract based on the identified risks and opportunities.
-
-    Format your response as a JSON object with the following structure:
     {
       "risks": [{"risk": "Risk description", "explanation": "Brief explanation", "severity": "low|medium|high"}],
       "opportunities": [{"opportunity": "Opportunity description", "explanation": "Brief explanation", "impact": "low|medium|high"}],
       "summary": "Comprehensive summary of the contract",
       "recommendations": ["Recommendation 1", "Recommendation 2", ...],
       "keyClauses": ["Clause 1", "Clause 2", ...],
-      "legalCompliance": "Assessment of legal compliance",
-      "negotiationPoints": ["Point 1", "Point 2", ...],
-      "contractDuration": "Duration of the contract, if applicable",
-      "terminationConditions": "Summary of termination conditions, if applicable",
-      "overallScore": "Overall score from 1 to 100",
-      "financialTerms": {
-        "description": "Overview of financial terms",
-        "details": ["Detail 1", "Detail 2", ...]
-      },
-      "performanceMetrics": ["Metric 1", "Metric 2", ...],
-      "specificClauses": "Summary of clauses specific to this contract type"
-    }
-      `;
-  } else {
-    prompt = `
-    Analyze the following ${contractType} contract and provide:
-    1. A list of at least 5 potential risks for the party receiving the contract, each with a brief explanation and severity level (low, medium, high).
-    2. A list of at least 5 potential opportunities or benefits for the receiving party, each with a brief explanation and impact level (low, medium, high).
-    3. A brief summary of the contract
-    4. An overall score from 1 to 100, with 100 being the highest. This score represents the overall favorability of the contract based on the identified risks and opportunities.
-
-     {
-      "risks": [{"risk": "Risk description", "explanation": "Brief explanation"}],
-      "opportunities": [{"opportunity": "Opportunity description", "explanation": "Brief explanation"}],
-      "summary": "Brief summary of the contract",
       "overallScore": "Overall score from 1 to 100"
     }
-`;
-  }
 
-  prompt += `
-    Important: Provide only the JSON object in your response, without any additional text or formatting. 
-    
     Contract text:
     ${contractText}
     `;
+  } else {
+    prompt = `
+    Analyze the following ${contractType} contract and provide:
+    {
+      "risks": [{"risk": "Risk description", "explanation": "Brief explanation"}],
+      "opportunities": [{"opportunity": "Opportunity description", "explanation": "Brief explanation"}],
+      "summary": "Brief summary of the contract",
+      "recommendations": [],
+      "overallScore": "Overall score from 1 to 100"
+    }
+
+    Contract text:
+    ${contractText}
+    `;
+  }
 
   try {
     const results = await aiModel.generateContent(prompt);
-    const response = results.response.text;
-    return JSON.parse(response);
+    const responseText = typeof results.response?.text === "function" ? await results.response.text() : null;
+
+    if (!responseText || typeof responseText !== "string") {
+      console.error("Unexpected response format:", results);
+      throw new Error("Expected response.text to be a valid JSON string");
+    }
+
+    const sanitizedText = responseText.replace(/```json|```/g, "").trim();
+
+    // Parse JSON and ensure recommendations exist
+    const parsedResponse = JSON.parse(sanitizedText);
+    parsedResponse.recommendations = parsedResponse.recommendations || []; // Default to an empty array if missing
+
+    return parsedResponse;
   } catch (error) {
     console.error("Error analyzing contract:", error);
     throw error;

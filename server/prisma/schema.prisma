@@ -35,24 +35,24 @@ model ContractAnalysis {
   id                        Int                   @id @default(autoincrement())
   userId                    Int
   user                      User                  @relation(fields: [userId], references: [id])
-  contractText              String
-  risks                     Risk[]
+  contractText              String               @db.Text // Updated to support larger text
+  risks                     Risk[]   // This implies `risks` is a relation to the `Risk` model
   opportunities             Opportunity[]
-  summary                   String
-  recommendations           Json
-  keyClauses                Json
+  summary                   String               @db.Text // Updated to support larger summaries
+  recommendations           Json?    // Ensure this field exists and is nullable if needed
+  keyClauses                Json? // Allow null values
   legalCompliance           String?
-  negotiationPoints         Json
+  negotiationPoints         Json? // Allow null or optional values
   contractDuration          String?
   terminationConditions     String?
   overallScore              Float?               @default(0)
   compensationStructure     CompensationStructure?
-  performanceMetrics        Json
-  intellectualPropertyClauses Json
+  performanceMetrics        Json?   // Make this field optional
+  intellectualPropertyClauses Json? // Allow null values
   createdAt                 DateTime             @default(now())
   version                   Int                  @default(1)
   userFeedback              UserFeedback?
-  customFields              Json
+  customFields              Json? // Allow null values
   expirationDate            DateTime?
   language                  String               @default("en")
   aiModel                   String               @default("gemini-pro")
@@ -63,18 +63,18 @@ model ContractAnalysis {
 model Risk {
   id          Int       @id @default(autoincrement())
   risk        String
-  explanation String
+  explanation String    @db.Text // Updated to support larger explanations
   severity    Severity
-  contractId  Int    @unique
+  contractId  Int    
   contract    ContractAnalysis @relation(fields: [contractId], references: [id])
 }
 
 model Opportunity {
   id          Int       @id @default(autoincrement())
-  opportunity String
-  explanation String
+  opportunity String    @db.Text // Updated to support larger explanations
+  explanation String    @db.Text // Updated to support larger explanations
   impact      Impact
-  contractId  Int    @unique
+  contractId  Int    
   contract    ContractAnalysis @relation(fields: [contractId], references: [id])
 }
 

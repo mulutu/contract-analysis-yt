@@ -68,75 +68,76 @@ export default function ContractAnalysisResults({
   };
 
   const renderRisksAndOpportunities = (
-    items: Array<{
-      risk?: string;
-      opportunity?: string;
-      explanation?: string;
-      severity?: string;
-      impact?: string;
-    }>,
-    type: "risks" | "opportunities"
-  ) => {
-    const displayItems = isActive ? items : items.slice(0, 3);
-    const fakeItems = {
-      risk: type === "risks" ? "Hidden Risk" : undefined,
-      opportunity: type === "opportunities" ? "Hidden Opportunity" : undefined,
-      explanation: "Hidden Explanation",
-      severity: "low",
-      impact: "low",
-    };
-
-    return (
-      <ul className="space-y-4">
-        {displayItems.map((item, index) => (
-          <motion.li
-            className="border rounded-lg p-4"
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-          >
-            <div className="flex justify-between items-start mb-2">
-              <span className="font-semibold text-lg">
-                {type === "risks" ? item.risk : item.opportunity}
-              </span>
-              {(item.severity || item.impact) && (
-                <Badge
-                  className={
-                    type === "risks"
-                      ? getSeverityColor(item.severity!)
-                      : getImpactColor(item.impact!)
-                  }
-                >
-                  {(item.severity || item.impact)?.toUpperCase()}
-                </Badge>
-              )}
-            </div>
-            <p className="mt-2 text-gray-600">
-              {type === "risks" ? item.explanation : item.explanation}
-            </p>
-          </motion.li>
-        ))}
-        {!isActive && items.length > 3 && (
-          <motion.li
-            className="border rounded-lg p-4 blur-sm"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: displayItems.length * 0.1 }}
-          >
-            <div className="flex justify-between items-start mb-2">
-              <span className="font-semibold text-lg">
-                {type === "risks" ? fakeItems.risk : fakeItems.opportunity}
-              </span>
-              <Badge>
-                {(fakeItems.severity || fakeItems.impact)?.toUpperCase()}
-              </Badge>
-            </div>
-          </motion.li>
-        )}
-      </ul>
-    );
+  items: Array<{
+    risk?: string;
+    opportunity?: string;
+    explanation?: string;
+    severity?: string;
+    impact?: string;
+  }> = [], // Default to an empty array
+  type: "risks" | "opportunities"
+) => {
+  const displayItems = isActive ? items : items.slice(0, 3); // Safe slicing
+  const fakeItems = {
+    risk: type === "risks" ? "Hidden Risk" : undefined,
+    opportunity: type === "opportunities" ? "Hidden Opportunity" : undefined,
+    explanation: "Hidden Explanation",
+    severity: "low",
+    impact: "low",
   };
+
+  return (
+    <ul className="space-y-4">
+      {displayItems.map((item, index) => (
+        <motion.li
+          className="border rounded-lg p-4"
+          key={index}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: index * 0.1 }}
+        >
+          <div className="flex justify-between items-start mb-2">
+            <span className="font-semibold text-lg">
+              {type === "risks" ? item.risk : item.opportunity}
+            </span>
+            {(item.severity || item.impact) && (
+              <Badge
+                className={
+                  type === "risks"
+                    ? getSeverityColor(item.severity!)
+                    : getImpactColor(item.impact!)
+                }
+              >
+                {(item.severity || item.impact)?.toUpperCase()}
+              </Badge>
+            )}
+          </div>
+          <p className="mt-2 text-gray-600">
+            {item.explanation || "No explanation available"}
+          </p>
+        </motion.li>
+      ))}
+      {!isActive && items.length > 3 && (
+        <motion.li
+          className="border rounded-lg p-4 blur-sm"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: displayItems.length * 0.1 }}
+        >
+          <div className="flex justify-between items-start mb-2">
+            <span className="font-semibold text-lg">
+              {type === "risks" ? fakeItems.risk : fakeItems.opportunity}
+            </span>
+            <Badge>
+              {(fakeItems.severity || fakeItems.impact)?.toUpperCase()}
+            </Badge>
+          </div>
+        </motion.li>
+      )}
+    </ul>
+  );
+};
+
 
   const renderPremiumAccordition = (content: ReactNode) => {
     if (isActive) {

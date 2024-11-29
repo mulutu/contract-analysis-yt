@@ -1,5 +1,12 @@
-import { api } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+
+import { api } from "../lib/api";
+
+/*const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  withCredentials: true,
+});*/
 
 export const useCurrentUser = () => {
   const {
