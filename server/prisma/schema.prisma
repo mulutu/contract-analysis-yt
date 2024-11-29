@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int      @id @default(autoincrement()) // Prisma automatically generates a unique primary key field
+  googleId       String   @unique @map("google_id")     // Equivalent to `googleId` in Mongoose schema with uniqueness
+  email          String   @unique                      // Email field with uniqueness constraint
+  displayName    String   @map("display_name")          // Display name
+  profilePicture String?  @map("profile_picture")       // Optional field for profile picture
+  isPremium      Boolean  @default(false) @map("is_premium") // Default value set to false
+  contractAnalyses ContractAnalysis[] // One-to-many relationship with the ContractAnalysis model
+
+  @@map("users") // Optional: Maps to the "users" table in the database
+}
+
+
+//model User {
+//  id          Int                 @id @default(autoincrement())
+//  contractAnalyses ContractAnalysis[]
+//}
+
+model ContractAnalysis {
+  id                        Int                   @id @default(autoincrement())
+  userId                    Int
+  user                      User                  @relation(fields: [userId], references: [id])
+  contractText              String
+  risks                     Risk[]
+  opportunities             Opportunity[]
+  summary                   String
+  recommendations           Json
+  keyClauses                Json
+  legalCompliance           String?
+  negotiationPoints         Json
+  contractDuration          String?
+  terminationConditions     String?
+  overallScore              Float?               @default(0)
+  compensationStructure     CompensationStructure?
+  performanceMetrics        Json
+  intellectualPropertyClauses Json
+  createdAt                 DateTime             @default(now())
+  version                   Int                  @default(1)
+  userFeedback              UserFeedback?
+  customFields              Json
+  expirationDate            DateTime?
+  language                  String               @default("en")
+  aiModel                   String               @default("gemini-pro")
+  contractType              String
+  financialTerms            FinancialTerms?
+}
+
+model Risk {
+  id          Int       @id @default(autoincrement())
+  risk        String
+  explanation String
+  severity    Severity
+  contractId  Int    @unique
+  contract    ContractAnalysis @relation(fields: [contractId], references: [id])
+}
+
+model Opportunity {
+  id          Int       @id @default(autoincrement())
+  opportunity String
+  explanation String
+  impact      Impact
+  contractId  Int    @unique
+  contract    ContractAnalysis @relation(fields: [contractId], references: [id])
+}
+
+model CompensationStructure {
+  id            Int    @id @default(autoincrement())
+  baseSalary    String
+  bonuses       String
+  equity        String
+  otherBenefits String
+  contractId    Int    @unique
+  contract      ContractAnalysis @relation(fields: [contractId], references: [id])
+}
+
+model UserFeedback {
+  id       Int      @id @default(autoincrement())
+  rating   Int
+  comments String
+  contractId Int @unique
+  contract ContractAnalysis @relation(fields: [contractId], references: [id])
+}
+
+model FinancialTerms {
+  id          Int      @id @default(autoincrement())
+  description String
+  details     Json
+  contractId  Int    @unique
+  contract    ContractAnalysis @relation(fields: [contractId], references: [id])
+}
+
+enum Severity {
+  low
+  medium
+  high
+}
+
+enum Impact {
+  low
+  medium
+  high
+}
+
