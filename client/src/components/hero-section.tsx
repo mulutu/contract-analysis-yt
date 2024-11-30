@@ -59,7 +59,7 @@ export function HeroSection() {
             The world's #1 contract review and analysis platform
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Easily review, analyze, understand, and optimize your contracts in no time.
+            Upload, review, analyze, understand, and optimize your contracts in no time.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <UploadCard />

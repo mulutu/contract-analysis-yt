@@ -9,36 +9,123 @@ import {
 import { api } from "@/lib/api";
 import { useContractStore } from "@/store/zustand";
 import { useMutation } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
-import { useDropzone } from "react-dropzone";
+import { useCallback, useState, useEffect } from "react";
+import { useDropzone, FileRejection } from "react-dropzone";
 import { AnimatePresence, motion } from "framer-motion";
 import { Brain, FileText, Loader2, Sparkles, Trash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { useRouter } from "next/navigation";
+import { Checkbox } from "../ui/checkbox";
+import { Label } from "../ui/label";
+import { toast } from "sonner";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
+
+/**
+ * Google Sign In
+ * This function is used to sign in with Google
+ * */
+function googleSignIn(): Promise<void> {
+  return new Promise((resolve) => {
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+    resolve();
+  });
+}
+
+/**
+ * Upload Modal
+ * This component is used to upload a contract file
+ * and analyze it with the AI
+ * */
 interface IUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUploadComplete: () => void;
 }
 
+
+/**
+ * Upload Modal
+ * This component is used to upload a contract file
+ * and analyze it with the AI
+ * */
 export function UploadModal({
   isOpen,
   onClose,
   onUploadComplete,
 }: IUploadModalProps) {
+
   const { setAnalysisResults } = useContractStore();
   const router = useRouter();
-
   const [detectedType, setDetectedType] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
-  const [step, setStep] = useState<
-    "upload" | "detecting" | "confirm" | "processing" | "done"
-  >("upload");
+  const [step, setStep] = useState<"authentication" | "upload" | "detecting" | "confirm" | "processing" | "done">("authentication"); // Start at the authentication step
+  const [isAgreed, setIsAgreed] = useState(false);
+  const { user, isLoading } = useCurrentUser();
 
+
+  /**
+   * Is authenticated
+   * This function checks if the user is authenticated
+   * */
+  const isAuthenticated = useCallback(() => {
+    if (!user || isLoading) {
+      return false;
+    }else{
+      return true;
+    }    
+  }, []);
+
+
+  /**
+   * Check authentication
+   * This effect is used to check if the user is authenticated
+   * If the user is authenticated, proceed to the upload step
+   * */
+  useEffect(() => {
+    if (isAuthenticated()) {
+      setStep("upload"); // Proceed to the upload step if authenticated
+    }
+  }, [isAuthenticated]);
+
+
+  /**
+   * Google Sign In
+   * This mutation is used to sign in with Google
+   * */
+  const mutation = useMutation({
+    mutationFn: googleSignIn,
+    onSuccess: () => {
+      setStep("authentication");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+
+  /**
+   * Handle Google Sign In
+   * This function is called when the user signs in with Google
+   * It triggers the Google Sign In mutation
+   * */
+  const handleGoogleSignIn = () => {
+    if (isAgreed) {
+      mutation.mutate();
+    } else {
+      toast.error("Please agree to the terms and conditions");
+    }
+  };
+
+
+  /**
+   * Detect contract type
+   * This mutation is used to detect the type of the contract
+   * based on the file uploaded by the user
+   * */
   const { mutate: detectContractType } = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -53,7 +140,7 @@ export function UploadModal({
           },
         }
       );
-
+      console.log("Detect file type: " + response.data);
       return response.data.detectedType;
     },
 
@@ -68,6 +155,12 @@ export function UploadModal({
     },
   });
 
+
+  /**
+   * Upload file
+   * This mutation is used to upload the file to the server
+   * and analyze it with the AI
+   * */
   const { mutate: uploadFile, isPending: isProcessing } = useMutation({
     mutationFn: async ({
       file,
@@ -101,8 +194,32 @@ export function UploadModal({
     },
   });
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
+
+  /**
+   * On drop
+   * This function is called when the user drops a file
+   * It validates the file type and size
+   * */
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
+    //setFiles([]);
+    setError(null);
+
+    if (rejectedFiles.length > 0) {
+      setError("File type not supported. Only PDF, DOCX, or TXT files are allowed.");
+      return;
+    }
+
+    const maxFileSize = 5 * 1024 * 1024; // 5 MB
+    const validFile = acceptedFiles.find(
+      (file) => file.size <= maxFileSize
+    );
+
+    if (!validFile) {
+      setError("File size exceeds the 5 MB limit.");
+      return;
+    }
+
+    if (acceptedFiles.length > 0 && validFile) {
       setFiles(acceptedFiles);
       setError(null);
       setStep("upload");
@@ -111,15 +228,28 @@ export function UploadModal({
     }
   }, []);
 
+
+  /**
+   * Use Dropzone
+   * This hook is used to create a dropzone for file uploads
+   * */
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       "application/pdf": [".pdf"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"], // DOCX
+      "text/plain": [".txt"], // TXT
     },
     maxFiles: 1,
     multiple: false,
   });
 
+
+  /**
+   * Handle file upload
+   * This function is called when the user uploads a file
+   * It triggers the detection of the contract type
+   * */
   const handleFileUpload = () => {
     if (files.length > 0) {
       setStep("detecting");
@@ -127,6 +257,12 @@ export function UploadModal({
     }
   };
 
+
+  /**
+   * Handle analyzing contract
+   * This function is called when the user confirms the detected contract type
+   * and wants to analyze the contract with the AI
+   * */
   const handleAnalyzeContract = () => {
     if (files.length > 0 && detectedType) {
       setStep("processing");
@@ -134,16 +270,66 @@ export function UploadModal({
     }
   };
 
+  /**
+   * Handle closing the modal
+   * This function is called when the user closes the modal
+   * It resets the state of the modal
+   * and closes the modal
+   * */
   const handleClose = () => {
     onClose();
     setFiles([]);
     setDetectedType(null);
     setError(null);
-    setStep("upload");
+    //setStep("upload");
+    setStep(isAuthenticated() ? "upload" : "authentication");
   };
 
+
+  /**
+   * Render content
+   * This function renders the content of the modal based on the current step
+   * */
   const renderContent = () => {
     switch (step) {
+      case "authentication": {
+        return (
+          <AnimatePresence>
+            <motion.div className="flex flex-col items-center justify-center py-8">
+              <h2 className="text-xl font-bold text-gray-800">
+                Authentication Required
+              </h2>
+              <p className="mt-2 text-sm text-gray-600">
+                Please log in or register to upload and analyze your contract.
+              </p>
+              <Button
+                onClick={handleGoogleSignIn}
+                disabled={!isAgreed || mutation.isPending}
+                className="w-full"
+              >
+                {mutation.isPending ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : (
+                  <>Sign in with Google</>
+                )}
+              </Button>
+              <div className="flex items-center space-x-2 mt-2">
+                <Checkbox
+                  id="terms"
+                  checked={isAgreed}
+                  onCheckedChange={(checked) => setIsAgreed(checked as boolean)}
+                />
+                <Label
+                  htmlFor="terms"
+                  className="text-sm text-gray-500 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  I agree to the terms and conditions
+                </Label>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        );
+      }
       case "upload": {
         return (
           <AnimatePresence>
@@ -166,7 +352,7 @@ export function UploadModal({
                   files
                 </p>
                 <p className="bg-yellow-500/30 border border-yellow-500 border-dashed text-yellow-700 p-2 rounded mt-2">
-                  Note: Only PDF files are accepted
+                  Note: Only PDF, DOCX, or TXT files are accepted
                 </p>
               </div>
               {files.length > 0 && (
