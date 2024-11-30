@@ -40,6 +40,8 @@ export async function createCheckoutSession(req, res) {
     });
 
     console.log("Stripe session created:", session);
+    console.log("Stripe session ID:", session.id);
+    console.log("User id:", user.id.toString());
 
     res.json({ sessionId: session.id });
 
@@ -73,6 +75,8 @@ export async function handleWebhook(req, res) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const userId = session.client_reference_id;
+
+    console.log("Checkout session completed", session.id);
 
     if (userId) {
       const user = await prisma.user.update({

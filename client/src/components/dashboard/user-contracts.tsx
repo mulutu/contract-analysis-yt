@@ -184,7 +184,6 @@ export default function UserContracts() {
   const highRiskContracts =
   contracts?.filter((contract) => {
     if (!Array.isArray(contract.risks)) {
-      console.warn(`Contract ID ${contract.id} has no risks array`);
       return false;
     }
     return contract.risks.some((risk) => risk.severity === "high");

@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 
 export async function fetchSubscriptionStatus() {
   try {
-    console.log("Fetching subscription status...");
+    console.log("Fetching subscription status..." + api.defaults.headers );
     const response = await api.get("/payments/membership-status");
 
     if (response.status !== 200) {
