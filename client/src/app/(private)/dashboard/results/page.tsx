@@ -34,6 +34,7 @@ export default function ContractResultsPage() {
           sessionId: response.data.sessionId,
         });
       } catch (error) {
+        console.error("Handle upgrade error:: " + error);
         toast.error("Please try again or login to your account");
       } finally {
         setLoading(false);

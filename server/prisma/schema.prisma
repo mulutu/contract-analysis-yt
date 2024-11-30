@@ -62,7 +62,7 @@ model ContractAnalysis {
 
 model Risk {
   id          Int       @id @default(autoincrement())
-  risk        String
+  risk        String    @db.Text // Updated to support larger explanations
   explanation String    @db.Text // Updated to support larger explanations
   severity    Severity
   contractId  Int    

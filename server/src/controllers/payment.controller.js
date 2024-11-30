@@ -15,6 +15,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 export async function createCheckoutSession(req, res) {
   const user = req.user;
 
+  console.log("Create checout session for user", user);
+
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -37,7 +39,12 @@ export async function createCheckoutSession(req, res) {
       client_reference_id: user.id.toString(),
     });
 
+    console.log("Stripe session created:", session);
+
     res.json({ sessionId: session.id });
+
+    console.log("Checkout session created", session.id);
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to create charge" });
@@ -48,6 +55,8 @@ export async function handleWebhook(req, res) {
   const sig = req.headers["stripe-signature"];
 
   let event;
+
+  console.log("Received webhook event", req.body);
 
   try {
     event = stripe.webhooks.constructEvent(
@@ -84,6 +93,9 @@ export async function handleWebhook(req, res) {
 
 export async function getPremiumStatus(req, res) {
   const user = req.user;
+
+  console.log("Get premium status for user", user);
+
   if (user.isPremium) {
     res.json({ status: "active" });
   } else {
