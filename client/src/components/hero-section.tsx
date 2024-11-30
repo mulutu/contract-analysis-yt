@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { Button, buttonVariants } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
+import UploadCard from "./uploadfile-card";
 
 const features = [
   {
@@ -50,7 +51,43 @@ const features = [
 
 export function HeroSection() {
   return (
-    <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-b from-background to-background/80">
+    <section className="w-full py-12 md:py-12 lg:py-12 bg-gradient-to-b from-background to-background/80">
+      <div className="container px-4 md:px-0 flex flex-col items-center max-w-5xl mx-auto">
+        
+        <div className="text-center mb-12 w-full">
+          <h1 className="text-4xl font-bold sm:text-3xl xl:text-4xl/none bg-clip-text mb-4">
+            The world's #1 contract review and analysis platform
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            Easily review, analyze, understand, and optimize your contracts in no time.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <UploadCard />
+          </div>         
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full mb-12">
+            {features.map((feature) => (
+              <Card key={feature.title} className="h-full">
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <feature.icon className="text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {feature.description}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/*<section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-b from-background to-background/80">
       <div className="container px-4 md:px-6 flex flex-col items-center max-w-6xl mx-auto">
         <Link
           href={"/dashboard"}
@@ -109,6 +146,4 @@ export function HeroSection() {
           </div>
         </div>
       </div>
-    </section>
-  );
-}
+    </section>*/
