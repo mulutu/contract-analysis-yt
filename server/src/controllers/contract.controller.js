@@ -99,6 +99,21 @@ export async function analyzeContract(req, res) {
       }
     }
 
+    // Sanitize contractDuration
+    const sanitizeContractDuration = (duration) => {
+      if (!duration || typeof duration !== "string") return null; // Return null if undefined or invalid
+      if (duration.toLowerCase().includes("indefinite")) return null; // Handle "Indefinite period"
+      const parsedDuration = parseFloat(duration);
+      return isNaN(parsedDuration) ? null : parsedDuration;
+    };
+
+    // Sanitize overallScore
+    const sanitizeOverallScore = (score) => {
+      if (score === null || score === undefined) return null; // Return null if not provided
+      const parsedScore = parseFloat(score);
+      return isNaN(parsedScore) ? null : parsedScore;
+    };
+
 
     const savedAnalysis = await prisma.contractAnalysis.create({
       data: {
@@ -118,9 +133,11 @@ export async function analyzeContract(req, res) {
         performanceMetrics: analysis.performanceMetrics || [],
         intellectualPropertyClauses: analysis.intellectualPropertyClauses || [],
         customFields: analysis.customFields || [],
-        overallScore: analysis.overallScore || null,
+        //overallScore: analysis.overallScore || null, // Ensured to be Float or null
+        overallScore: sanitizeOverallScore(analysis.overallScore), // Sanitized overallScore
         legalCompliance: analysis.legalCompliance || null,
-        contractDuration: analysis.contractDuration || null,
+        //contractDuration: analysis.contractDuration || null,
+        contractDuration: sanitizeContractDuration(analysis.contractDuration), // Sanitized contractDuration
         terminationConditions: analysis.terminationConditions || [],
         expirationDate: expirationDate,
         language: "en",

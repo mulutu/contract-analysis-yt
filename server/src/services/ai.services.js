@@ -101,19 +101,24 @@ export async function analyzeContractWithAI(contractText, tier, contractType) {
       "summary": "Comprehensive summary of the contract",
       "recommendations": ["Recommendation 1", "Recommendation 2", ...],
       "keyClauses": ["Clause 1", "Clause 2", ...],
-      "overallScore": "Overall score from 1 to 100",
+      "overallScore": "Overall score MUST be from 1 to 100 and should not be null",
       "negotiationPoints": ["Negotiation point 1", "Negotiation point 2", ...],
       "performanceMetrics": ["Metric 1", "Metric 2", ...],
       "intellectualPropertyClauses": ["Clause 1", "Clause 2", ...],
       "customFields": ["Field 1", "Field 2", ...],
-      "legalCompliance": "Legal compliance score from 1 to 100",
+      "legalCompliance": "Give the overal legal compliance assessment, quote the relevant laws, statutes, legal frameworks etc.",
       "contractDuration": "Contract duration in months",
       "terminationConditions": ["Condition 1", "Condition 2", ...],
-      "expirationDate": "Contract expiration date"
+      "expirationDate": "Contract expiration date in the format YYYY-MM-DD"
     }
 
     Contract text:
     ${contractText}
+
+    Instructions:
+    - strictly stick to the format given above
+    - ensure all fields are filled in
+    - provide accurate and concise information
     `;
   } else {
     prompt = `
@@ -124,19 +129,24 @@ export async function analyzeContractWithAI(contractText, tier, contractType) {
       "summary": "Comprehensive summary of the contract",
       "recommendations": ["Recommendation 1", "Recommendation 2", ...],
       "keyClauses": ["Clause 1", "Clause 2", ...],
-      "overallScore": "Overall score from 1 to 100",
+      "overallScore": "Overall score MUST be from 1 to 100 and should not be null",
       "negotiationPoints": ["Negotiation point 1", "Negotiation point 2", ...],
       "performanceMetrics": ["Metric 1", "Metric 2", ...],
       "intellectualPropertyClauses": ["Clause 1", "Clause 2", ...],
       "customFields": ["Field 1", "Field 2", ...],
-      "legalCompliance": "Legal compliance score from 1 to 100",
+      "legalCompliance": "Give the overal legal compliance assessment, quote the relevant laws, statutes, legal frameworks etc.",
       "contractDuration": "Contract duration in months",
       "terminationConditions": ["Condition 1", "Condition 2", ...],
-      "expirationDate": "Contract expiration date"
+      "expirationDate": "Contract expiration date in the format YYYY-MM-DD"
     }
 
     Contract text:
     ${contractText}
+
+    Instructions:
+    - strictly stick to the format given above
+    - ensure all fields are filled in
+    - provide accurate and concise information
     `;
   }
 
@@ -151,10 +161,21 @@ export async function analyzeContractWithAI(contractText, tier, contractType) {
 
     console.log("Raw responseText:", responseText);
 
-    const sanitizedText = responseText
+    /*const sanitizedText = responseText
       .replace(/```(json)?/g, "") // Remove code fences
       .replace(/^\s*\*+/gm, "")  // Remove leading asterisks
-      .trim();
+      .trim();*/
+
+    const sanitizedText = responseText
+      .replace(/```(json)?/g, "") // Remove code fences
+      .replace(/^\s*\*+/gm, "") // Remove leading asterisks
+      .replace(/^\s*[-+]\s+/gm, "") // Remove leading dashes or plus signs from lists
+      .replace(/^#+\s+/gm, "") // Remove markdown headings
+      .replace(/>\s+/gm, "") // Remove blockquote markers
+      .replace(/\s*\n\s*/g, " ") // Collapse multiple newlines into a single space
+      .replace(/\t+/g, " ") // Replace tabs with a single space
+      .replace(/\s{2,}/g, " ") // Collapse multiple spaces into a single space
+      .trim(); // Remove leading and trailing whitespace
 
     //const sanitizedText = responseText.replace(/```json|```/g, "").trim();
 
