@@ -90,6 +90,15 @@ export async function analyzeContract(req, res) {
       }))
       : [];
 
+    // Validate and handle expiration date
+    let expirationDate = null;
+    if (analysis.expirationDate) {
+      const parsedDate = new Date(analysis.expirationDate);
+      if (!isNaN(parsedDate.getTime())) {
+        expirationDate = parsedDate; // Valid date
+      }
+    }
+
 
     const savedAnalysis = await prisma.contractAnalysis.create({
       data: {
@@ -110,10 +119,20 @@ export async function analyzeContract(req, res) {
         intellectualPropertyClauses: analysis.intellectualPropertyClauses || [],
         customFields: analysis.customFields || [],
         overallScore: analysis.overallScore || null,
+        legalCompliance: analysis.legalCompliance || null,
+        contractDuration: analysis.contractDuration || null,
+        terminationConditions: analysis.terminationConditions || [],
+        expirationDate: expirationDate,
         language: "en",
         aiModel: "gemini-pro",
       },
+      include: {
+        risks: true, // Include related risks
+        opportunities: true, // Include related opportunities
+      },
     });
+
+    console.log("Saved analysis:", savedAnalysis);
 
     res.json(savedAnalysis);
   } catch (error) {
@@ -172,6 +191,10 @@ export async function getContractByID(req, res) {
       where: {
         id: parseInt(id, 10),
         userId: user.id,
+      },
+      include: {
+        risks: true, // Include related risks
+        opportunities: true, // Include related opportunities
       },
     });
 

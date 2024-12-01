@@ -2,14 +2,14 @@ interface Risk {
   risk: string;
   explanation: string;
   severity: "low" | "medium" | "high";
-  _id: string;
+  id: string;
 }
 
 interface Opportunity {
   opportunity: string;
   explanation: string;
   impact: "low" | "medium" | "high";
-  _id: string;
+  id: string;
 }
 
 interface CompensationStructure {
@@ -40,7 +40,7 @@ export interface ContractAnalysis {
   expirationDate: string | null;
   language: string;
   aiModel: string;
-  _id: string;
+  id: string;
   createdAt: string;
   __v: number;
 }

@@ -41,10 +41,10 @@ model ContractAnalysis {
   summary                   String               @db.Text // Updated to support larger summaries
   recommendations           Json?    // Ensure this field exists and is nullable if needed
   keyClauses                Json? // Allow null values
-  legalCompliance           String?
+  legalCompliance           Float?
   negotiationPoints         Json? // Allow null or optional values
   contractDuration          String?
-  terminationConditions     String?
+  terminationConditions     Json?
   overallScore              Float?               @default(0)
   compensationStructure     CompensationStructure?
   performanceMetrics        Json?   // Make this field optional

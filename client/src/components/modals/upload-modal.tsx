@@ -116,13 +116,17 @@ export function UploadModal({
       formData.append("contract", file);
       formData.append("contractType", contractType);
 
+      console.log("Uploading contract to server for analysis...");
+
       const response = await api.post(`/contracts/analyze`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
-      console.log(response.data);
+      console.log("Analysis results from server:=====> " + response.data);
+      console.log( response.data);
+      
       return response.data;
     },
     onSuccess: (data) => {
@@ -214,7 +218,7 @@ export function UploadModal({
         </p>
         <Button
           onClick={handleGoogleSignIn}
-          disabled={!isAgreed || isLoading}
+          disabled={!isAgreed}
           className="w-full"
         >
           Sign in with Google

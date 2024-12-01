@@ -24,9 +24,12 @@ export default function ContractResultsPage() {
 
   const isActive = subscriptionStatus.status === "active";
 
+  console.log("subscriptionStatus", subscriptionStatus);
+
   const handleUpgrade = async () => {
     setLoading(true);
     if (!isActive) {
+      console.log("Handle upgrade  not premium status");
       try {
         const response = await api.get("/payments/create-checkout-session");
         const stripe = await stripePromise;
@@ -40,6 +43,7 @@ export default function ContractResultsPage() {
         setLoading(false);
       }
     } else {
+      console.log("already premium status");
       toast.error("You are already a premium member");
     }
   };
@@ -50,7 +54,7 @@ export default function ContractResultsPage() {
 
   return (
     <ContractAnalysisResults
-      contractId={analysisResults._id}
+      contractId={analysisResults.id}
       isActive={isActive}
       analysisResults={analysisResults}
       onUpgrade={handleUpgrade}

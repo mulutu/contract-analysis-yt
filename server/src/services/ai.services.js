@@ -6,7 +6,7 @@ const { getDocument, GlobalWorkerOptions } = pdfjs;
 
 // Configure the PDF.js worker
 GlobalWorkerOptions.workerSrc = "./pdf.worker.js";
-const STANDARD_FONT_DATA_URL = "./fonts/";
+const STANDARD_FONT_DATA_URL = "./fonts/FoxitSansBold.pfb";
 
 // Configure the Google Generative AI
 const AI_MODEL = "gemini-pro";
@@ -101,7 +101,15 @@ export async function analyzeContractWithAI(contractText, tier, contractType) {
       "summary": "Comprehensive summary of the contract",
       "recommendations": ["Recommendation 1", "Recommendation 2", ...],
       "keyClauses": ["Clause 1", "Clause 2", ...],
-      "overallScore": "Overall score from 1 to 100"
+      "overallScore": "Overall score from 1 to 100",
+      "negotiationPoints": ["Negotiation point 1", "Negotiation point 2", ...],
+      "performanceMetrics": ["Metric 1", "Metric 2", ...],
+      "intellectualPropertyClauses": ["Clause 1", "Clause 2", ...],
+      "customFields": ["Field 1", "Field 2", ...],
+      "legalCompliance": "Legal compliance score from 1 to 100",
+      "contractDuration": "Contract duration in months",
+      "terminationConditions": ["Condition 1", "Condition 2", ...],
+      "expirationDate": "Contract expiration date"
     }
 
     Contract text:
@@ -111,11 +119,20 @@ export async function analyzeContractWithAI(contractText, tier, contractType) {
     prompt = `
     Analyze the following ${contractType} contract and provide:
     {
-      "risks": [{"risk": "Risk description", "explanation": "Brief explanation"}],
-      "opportunities": [{"opportunity": "Opportunity description", "explanation": "Brief explanation"}],
-      "summary": "Brief summary of the contract",
-      "recommendations": [],
-      "overallScore": "Overall score from 1 to 100"
+      "risks": [{"risk": "Risk description", "explanation": "Brief explanation", "severity": "low|medium|high"}],
+      "opportunities": [{"opportunity": "Opportunity description", "explanation": "Brief explanation", "impact": "low|medium|high"}],
+      "summary": "Comprehensive summary of the contract",
+      "recommendations": ["Recommendation 1", "Recommendation 2", ...],
+      "keyClauses": ["Clause 1", "Clause 2", ...],
+      "overallScore": "Overall score from 1 to 100",
+      "negotiationPoints": ["Negotiation point 1", "Negotiation point 2", ...],
+      "performanceMetrics": ["Metric 1", "Metric 2", ...],
+      "intellectualPropertyClauses": ["Clause 1", "Clause 2", ...],
+      "customFields": ["Field 1", "Field 2", ...],
+      "legalCompliance": "Legal compliance score from 1 to 100",
+      "contractDuration": "Contract duration in months",
+      "terminationConditions": ["Condition 1", "Condition 2", ...],
+      "expirationDate": "Contract expiration date"
     }
 
     Contract text:
@@ -132,7 +149,21 @@ export async function analyzeContractWithAI(contractText, tier, contractType) {
       throw new Error("Expected response.text to be a valid JSON string");
     }
 
-    const sanitizedText = responseText.replace(/```json|```/g, "").trim();
+    console.log("Raw responseText:", responseText);
+
+    const sanitizedText = responseText
+      .replace(/```(json)?/g, "") // Remove code fences
+      .replace(/^\s*\*+/gm, "")  // Remove leading asterisks
+      .trim();
+
+    //const sanitizedText = responseText.replace(/```json|```/g, "").trim();
+
+    console.log("Sanitized Text:", sanitizedText);
+
+    if (!isValidJson(sanitizedText)) {
+      console.error("Sanitized response is not valid JSON:", sanitizedText);
+      throw new Error("AI response is not valid JSON");
+    }
 
     // Parse JSON and ensure recommendations exist
     const parsedResponse = JSON.parse(sanitizedText);
@@ -142,5 +173,14 @@ export async function analyzeContractWithAI(contractText, tier, contractType) {
   } catch (error) {
     console.error("Error analyzing contract:", error);
     throw error;
+  }
+}
+
+function isValidJson(data) {
+  try {
+    JSON.parse(data);
+    return true;
+  } catch {
+    return false;
   }
 }
