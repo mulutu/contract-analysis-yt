@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
-import { api } from "../lib/api";
+import { axiosApi } from "../lib/api";
 
 /*const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -17,7 +17,7 @@ export const useCurrentUser = () => {
     queryKey: ["currentUser"],
     queryFn: async () => {
       try {
-        const response = await api.get("/auth/current-user");
+        const response = await axiosApi.get("/auth/current-user");
         return response.data;
       } catch (error) {
         console.error(error);

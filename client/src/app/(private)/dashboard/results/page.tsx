@@ -3,7 +3,7 @@
 import ContractAnalysisResults from "@/components/analysis/contract-analysis-results";
 import EmptyState from "@/components/analysis/empty-state";
 import { useSubscription } from "@/hooks/use-subscription";
-import { api } from "@/lib/api";
+import { axiosApi } from "@/lib/api";
 import stripePromise from "@/lib/stripe";
 import { useContractStore } from "@/store/zustand";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ export default function ContractResultsPage() {
     if (!isActive) {
       console.log("Handle upgrade  not premium status");
       try {
-        const response = await api.get("/payments/create-checkout-session");
+        const response = await axiosApi.get("/payments/create-checkout-session");
         const stripe = await stripePromise;
         await stripe?.redirectToCheckout({
           sessionId: response.data.sessionId,

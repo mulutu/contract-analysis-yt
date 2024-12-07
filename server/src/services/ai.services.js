@@ -119,6 +119,7 @@ export async function analyzeContractWithAI(contractText, tier, contractType) {
     - strictly stick to the format given above
     - ensure all fields are filled in
     - provide accurate and concise information
+    - overallScore cannot be null
     `;
   } else {
     prompt = `
@@ -147,6 +148,7 @@ export async function analyzeContractWithAI(contractText, tier, contractType) {
     - strictly stick to the format given above
     - ensure all fields are filled in
     - provide accurate and concise information
+    - overallScore cannot be null
     `;
   }
 

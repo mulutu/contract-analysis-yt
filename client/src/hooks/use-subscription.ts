@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useCurrentUser } from "./use-current-user";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { axiosApi } from "@/lib/api";
 
 export async function fetchSubscriptionStatus() {
   try {
-    console.log("Fetching subscription status..." + api.defaults.headers );
-    const response = await api.get("/payments/membership-status");
+    console.log("Fetching subscription status..." + axiosApi.defaults.headers );
+    const response = await axiosApi.get("/payments/membership-status");
 
     if (response.status !== 200) {
       console.error("Failed to fetch subscription status", response);

@@ -1,6 +1,6 @@
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSubscription } from "@/hooks/use-subscription";
-import { api } from "@/lib/api";
+import { axiosApi } from "@/lib/api";
 import stripePromise from "@/lib/stripe";
 import { toast } from "sonner";
 import {
@@ -37,7 +37,7 @@ export default function Settings() {
     setLoading(true);
     if (!isActive) {
       try {
-        const response = await api.get("/payments/create-checkout-session");
+        const response = await axiosApi.get("/payments/create-checkout-session");
         const stripe = await stripePromise;
         await stripe?.redirectToCheckout({
           sessionId: response.data.sessionId,

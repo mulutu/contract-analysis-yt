@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+import { axiosApi } from "@/lib/api";
 import stripePromise from "@/lib/stripe";
 import {
   Card,
@@ -13,7 +13,7 @@ import { Button } from "./ui/button";
 export function PricingSection() {
   const handleUpgrade = async () => {
     try {
-      const response = await api.get("/payments/create-checkout-session");
+      const response = await axiosApi.get("/payments/create-checkout-session");
       const stripe = await stripePromise;
       await stripe?.redirectToCheckout({
         sessionId: response.data.sessionId,

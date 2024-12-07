@@ -1,5 +1,5 @@
 import { ContractAnalysis } from "@/interfaces/contract.interface";
-import { api } from "@/lib/api";
+import { axiosApi } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -308,6 +308,6 @@ export default function UserContracts() {
 }
 
 async function fetchUserContracts(): Promise<ContractAnalysis[]> {
-  const response = await api.get("/contracts/user-contracts");
+  const response = await axiosApi.get("/contracts/user-contracts");
   return response.data;
 }

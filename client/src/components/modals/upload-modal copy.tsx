@@ -8,11 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { axiosApi } from "@/lib/api";
 import { useContractStore } from "@/store/zustand";
-import { useMutation as useConvexMutation, useQuery } from "convex/react"; // Convex's useMutation
-import { useMutation as useApiMutation } from "@tanstack/react-query"; // react-query's useMutation
-import { v4 as uuidv4 } from 'uuid';
-import { api } from '../../../convex/_generated/api';
-import { Id } from "../../../convex/_generated/dataModel"; // Adjust the path if necessary
+import { useMutation } from "@tanstack/react-query";
 import { useCallback, useState, useEffect, use } from "react";
 import { useDropzone, FileRejection } from "react-dropzone";
 import { AnimatePresence, motion } from "framer-motion";
@@ -25,6 +21,7 @@ import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { api } from '../../../convex/_generated/api';
 
 
 /**
@@ -43,7 +40,6 @@ interface IUploadModalProps {
   onClose: () => void;
   onUploadComplete: () => void;
 }
-
 
 
 /**
@@ -69,17 +65,11 @@ export function UploadModal({
   const [isAgreed, setIsAgreed] = useState(false);
   const isAuthenticated = !!user && !isLoading;
 
-  const generateUploadUrlMutation = useConvexMutation(api.functions.upload.generateUploadUrl);
-  const storeFileMutation = useConvexMutation(api.functions.upload.storeFile);
-  const getFileUrlMutation = useConvexMutation(api.functions.upload.getFileUrl);
-
-
   useEffect(() => {
     if (isAuthenticated && step === "authentication") {
       setStep("upload");
     }
   }, [isAuthenticated, step]);
-
 
   const handleGoogleSignIn = () => {
     if (!isAgreed) {
@@ -89,8 +79,7 @@ export function UploadModal({
     googleSignIn();
   };
 
-
-  const { mutate: detectContractType } = useApiMutation({
+  const { mutate: detectContractType } = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("contract", file);
@@ -116,7 +105,7 @@ export function UploadModal({
   });
 
 
-  const { mutate: uploadFile, isPending: isProcessing } = useApiMutation({
+  const { mutate: uploadFile, isPending: isProcessing } = useMutation({
     mutationFn: async ({
       file,
       contractType,
@@ -125,60 +114,9 @@ export function UploadModal({
       contractType: string;
     }) => {
 
-
-
-      //const userId = "js76r5539svtrs19bmz4jmzjwh761g1p"; //user.id;
-
-      /*const mockUserId: Id<"users"> = {
-        __tableName: "users",
-        __id: "js76r5539svtrs19bmz4jmzjwh761g1p",
-      };*/
-
-      const mockUserId = "js76r5539svtrs19bmz4jmzjwh761g1p" as unknown as Id<"users">;
-      const fileId = uuidv4();
-
-      // get url fo rthe file
-      const url = await generateUploadUrlMutation();      
-
-      console.log("Uploading contract to convex for storage...");
-      console.log(url);
-
-      // upload the file to convex
-      // Step 2: POST the file to the URL
-      const result = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      const { storageId } = await result.json();
-      console.log("Storage ID: " + storageId);
-
-      if (!result.ok) {
-        throw new Error("Failed to upload file to storage.");
-      }
-
-      const { fileUrl } = await getFileUrlMutation({ storageId });
-      console.log("File URL: " + fileUrl);
-
-      // store the file id in the database
-      if (!fileUrl) {
-        throw new Error("Failed to retrieve file URL.");
-      }
-
-      await storeFileMutation({
-        fileName: file.name,
-        contentType: file.type,
-        userId: mockUserId,
-        storageId,
-        fileId,
-        fileUrl,
-      });
-
       const formData = new FormData();
       formData.append("contract", file);
       formData.append("contractType", contractType);
-      formData.append("fileId", fileId);
-      formData.append("fileUrl", fileUrl);
 
       console.log("Uploading contract to server for analysis...");
 
@@ -493,5 +431,3 @@ export function UploadModal({
     </Dialog>
   );
 }
-
-

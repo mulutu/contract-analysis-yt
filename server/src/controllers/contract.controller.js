@@ -7,6 +7,8 @@ import {
 } from "../services/ai.services.js";
 import { PrismaClient } from "@prisma/client";
 import { isValidId } from "../utils/dbUtils.js";
+import { WebPDFLoader } from "@langchain/community/document_loaders/web/pdf";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
 const prisma = new PrismaClient();
 
@@ -52,7 +54,38 @@ export async function detectAndConfirmContractType(req, res) {
 // Analyze a contract
 export async function analyzeContract(req, res) {
   const user = req.user;
-  const { contractType } = req.body;
+  const { contractType, fileUrl } = req.body;
+
+  if (!fileUrl) {
+    return res.status(400).json({ error: "File URL missing" });
+  }
+
+  const response = await fetch(fileUrl);
+  const data = await response.blob();
+  const loader = new WebPDFLoader(data);
+  const docs = await loader.load();
+
+  let pdfText = "";
+  docs.forEach((doc) => {
+    pdfText = pdfText + doc.pageContent;
+  });
+
+  console.log("PDF Text:", pdfText);
+
+  const splitter = new RecursiveCharacterTextSplitter({
+    chunkSize: 100,
+    chunkOverlap: 20,
+  });
+
+  const output = await splitter.createDocuments([pdfText]);
+
+  let splitterList = [];
+  output.forEach((doc) => {
+    splitterList.push(doc.pageContent);
+  });
+
+  console.log("Splitter List:", splitterList);
+
 
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });

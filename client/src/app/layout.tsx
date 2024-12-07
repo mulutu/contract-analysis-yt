@@ -5,6 +5,8 @@ import { Header } from "@/components/header";
 import { ReactQueryProvider } from "@/providers/tanstack/react-query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ModalProvider } from "@/providers/modals/modal-providers";
+import { ConvexClientProvider } from "./ConvexClientProvider";
+
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -32,11 +34,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ReactQueryProvider>
-          <Header />
-          <ModalProvider>{children}</ModalProvider>
-          <Toaster />
-        </ReactQueryProvider>
+        <ConvexClientProvider>
+          <ReactQueryProvider>
+            <Header />
+            <ModalProvider>{children}</ModalProvider>
+            <Toaster />
+          </ReactQueryProvider>
+        </ConvexClientProvider>
       </body>
     </html>
   );
